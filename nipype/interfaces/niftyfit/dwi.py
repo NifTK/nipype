@@ -3,6 +3,12 @@
 
 """
 The dwi module of niftyfit, which wraps the fitting methods in NiftyFit.
+
+Change directory to provide relative paths for doctests
+    >>> import os
+    >>> filepath = os.path.dirname( os.path.realpath( __file__ ) )
+    >>> datadir = os.path.realpath(os.path.join(filepath, '../../testing/data'))
+    >>> os.chdir(datadir)
 """
 
 from ..base import TraitedSpec, traits, isdefined, CommandLineInputSpec
@@ -46,8 +52,8 @@ class FitDwiInputSpec(CommandLineInputSpec):
                              desc=desc)
     desc = 'Rotate the output tensors according to the q/s form of the image \
 (resulting tensors will be in mm coordinates, default: 0).'
-    rotsform_flag = traits.Int(desc=desc,
-                               argstr='-rotsform %d')
+    rot_sform_flag = traits.Int(desc=desc,
+                                argstr='-rotsform %d')
 
     # generic output options:
     error_file = traits.File(desc='Filename of parameter error maps.',
@@ -221,19 +227,19 @@ class FitDwi(NiftyFitCommand):
     Examples
     --------
 
-    >>> from nipype.interfaces.niftyfit import FitDwi
-    >>> fit_dwi = FitDwi()
-    >>> fit_dwi.inputs.source_file = 'im1.nii.gz'  # doctest: +SKIP
-    >>> fit_dwi.inputs.bvec_file = 'im1.bval'  # doctest: +SKIP
-    >>> fit_dwi.inputs.bval_file = 'im1.bvec'  # doctest: +SKIP
-    >>> fit_dwi.inputs.dti_flag = True
-    >>> fit_dwi.inputs.rgbmap_file = 'rgb_map.nii.gz'
-    >>> fit_dwi.cmdline  # doctest: +SKIP
-    'fit_dwi -source im1.nii.gz -bval im1.val -bvec im1.bvec -dti -rgbmap \
-rgb_map.nii.gz -syn dwifit_syn.nii.gz -res dwifit_mcmap.nii.gz\
--mdmap dwifit_mdmap.nii.gz -famap dwifit_famap.nii.gz -v1map \
-dwifit_v1map.nii.gz -tenmap2 dwifit_tenmap2.nii.gz -rotsform 0 -error \
-dwifit_error.nii.gz'
+    >>> from nipype.interfaces import niftyfit
+    >>> fit_dwi = niftyfit.FitDwi(dti_flag=True)
+    >>> fit_dwi.inputs.source_file = 'dwi.nii.gz'
+    >>> fit_dwi.inputs.bvec_file = 'bvecs'
+    >>> fit_dwi.inputs.bval_file = 'bvals'
+    >>> fit_dwi.inputs.rgbmap_file = 'rgb.nii.gz'
+    >>> fit_dwi.cmdline  # doctest: +ELLIPSIS +ALLOW_UNICODE
+    'fit_dwi -source dwi.nii.gz -bval bvals -bvec bvecs -dti \
+-error .../dwi_error.nii.gz -famap .../dwi_famap.nii.gz \
+-mcmap .../dwi_mcmap.nii.gz -mdmap .../dwi_mdmap.nii.gz \
+-nodiff .../dwi_no_diff.nii.gz -res .../dwi_resmap.nii.gz \
+-rgbmap rgb.nii.gz -syn .../dwi_syn.nii.gz -tenmap2 .../dwi_tenmap2.nii.gz \
+-tenmap .../dwi_tenmap.nii.gz -v1map .../dwi_v1map.nii.gz'
 
     """
     _cmd = get_custom_path('fit_dwi')
@@ -367,18 +373,15 @@ class DwiToolInputSpec(CommandLineInputSpec):
     bvec_file = traits.File(position=3,
                             exists=True,
                             desc=desc,
-                            argstr='-bvec %s',
-                            mandatory=True)
+                            argstr='-bvec %s')
     b0_file = traits.File(position=4,
                           exists=True,
                           desc='The B0 image corresponding to the source DWI',
-                          argstr='-b0 %s',
-                          mandatory=True)
+                          argstr='-b0 %s')
     mask_file = traits.File(position=5,
                             exists=True,
                             desc='The image mask',
-                            argstr='-mask %s',
-                            mandatory=True)
+                            argstr='-mask %s')
 
     # Output options, with templated output names based on the source image
     desc = 'Filename of multi-compartment model parameter map \
@@ -386,8 +389,10 @@ class DwiToolInputSpec(CommandLineInputSpec):
     mcmap_file = traits.File(desc=desc,
                              argstr='-mcmap %s',
                              genfile=True)
-    syn_file = traits.File(desc='Filename of synthetic image',
+    desc = 'Filename of synthetic image. Requires: bvec_file/b0_file.'
+    syn_file = traits.File(desc=desc,
                            argstr='-syn %s',
+                           requires=['bvec_file', 'b0_file'],
                            genfile=True)
     mdmap_file = traits.File(desc='Filename of MD map/ADC',
                              argstr='-mdmap %s',
@@ -398,11 +403,11 @@ class DwiToolInputSpec(CommandLineInputSpec):
     v1map_file = traits.File(desc='Filename of PDD map [x,y,z]',
                              argstr='-v1map %s',
                              genfile=True)
-    rgbmap_file = traits.File(desc='Filename of colour FA map',
+    rgbmap_file = traits.File(desc='Filename of colour FA map.',
                               argstr='-rgbmap %s',
                               requires=['dti_flag'],
                               genfile=True)
-    logdti_file = traits.File(desc='Filename of output logdti map',
+    logdti_file = traits.File(desc='Filename of output logdti map.',
                               argstr='-logdti2 %s',
                               requires=['dti_flag'],
                               genfile=True)
@@ -493,20 +498,20 @@ class DwiTool(NiftyFitCommand):
     Examples
     --------
 
-    >>> from nipype.interfaces.niftyfit import DwiTool
-    >>> dwi_tool = DwiTool()
-    >>> dwi_tool.inputs.source_file = 'im1.nii.gz'  # doctest: +SKIP
-    >>> dwi_tool.inputs.bvec_file = 'im1.bval'  # doctest: +SKIP
-    >>> dwi_tool.inputs.bval_file = 'im1.bvec'  # doctest: +SKIP
-    >>> dwi_tool.inputs.mask_file = 'im1.bvec'  # doctest: +SKIP
-    >>> dwi_tool.inputs.b0_file = 'b0.nii.gz'  # doctest: +SKIP
-    >>> dwi_tool.inputs.dti_flag = True
+    >>> from nipype.interfaces import niftyfit
+    >>> dwi_tool = niftyfit.DwiTool(dti_flag=True)
+    >>> dwi_tool.inputs.source_file = 'dwi.nii.gz'
+    >>> dwi_tool.inputs.bvec_file = 'bvecs'
+    >>> dwi_tool.inputs.bval_file = 'bvals'
+    >>> dwi_tool.inputs.mask_file = 'mask.nii.gz'
+    >>> dwi_tool.inputs.b0_file = 'b0.nii.gz'
     >>> dwi_tool.inputs.rgbmap_file = 'rgb_map.nii.gz'
-    >>> dwi_tool.cmdline  # doctest: +SKIP
-    'dwi_tool -source im1.nii.gz -bval im1.val -bvec im1.bvec -dti -mask \
-mask.nii.gz -b0 b0.nii.gz -rgbmap rgb_map.nii.gz -syn dwitool_syn.nii.gz \
--mdmap dwitool_mdmap.nii.gz -famap dwitool_famap.nii.gz -v1map \
-dwitool_v1map.nii.gz -logdti2 dwitool_logdti2.nii.gz'
+    >>> dwi_tool.cmdline  # doctest: +ELLIPSIS +ALLOW_UNICODE
+    'dwi_tool -source dwi.nii.gz -bval bvals -bvec bvecs -b0 b0.nii.gz \
+-mask mask.nii.gz -dti -famap .../dwi_famap.nii.gz \
+-logdti2 .../dwi_logdti2.nii.gz -mcmap .../dwi_mcmap.nii.gz \
+-mdmap .../dwi_mdmap.nii.gz -rgbmap rgb_map.nii.gz -syn .../dwi_syn.nii.gz \
+-v1map .../dwi_v1map.nii.gz'
 
     """
     _cmd = get_custom_path('dwi_tool')
@@ -514,15 +519,14 @@ dwitool_v1map.nii.gz -logdti2 dwitool_logdti2.nii.gz'
     output_spec = DwiToolOutputSpec
     _suffix = '_dwi_tool'
 
-    _suffix = '_dwi_tool'
-
     def _format_arg(self, name, trait_spec, value):
         if name == 'syn_file':
             if not isdefined(self.inputs.bvec_file) or \
                not isdefined(self.inputs.b0_file):
                 return ""
-            else:
-                return trait_spec.argstr % value
+        if name in ['logdti_file', 'rgbmap_file'] and \
+           not isdefined(self.inputs.dti_flag):
+            return ""
         return super(DwiTool, self)._format_arg(name, trait_spec, value)
 
     def _gen_filename(self, name):
@@ -557,10 +561,12 @@ dwitool_v1map.nii.gz -logdti2 dwitool_logdti2.nii.gz'
         else:
             outputs['mcmap_file'] = self._gen_filename('mcmap_file')
 
-        if isdefined(self.inputs.syn_file):
-            outputs['syn_file'] = self.inputs.syn_file
-        else:
-            outputs['syn_file'] = self._gen_filename('syn_file')
+        if isdefined(self.inputs.bvec_file) and \
+           isdefined(self.inputs.b0_file):
+            if isdefined(self.inputs.syn_file):
+                outputs['syn_file'] = self.inputs.syn_file
+            else:
+                outputs['syn_file'] = self._gen_filename('syn_file')
 
         if isdefined(self.inputs.mdmap_file):
             outputs['mdmap_file'] = self.inputs.mdmap_file
@@ -577,14 +583,15 @@ dwitool_v1map.nii.gz -logdti2 dwitool_logdti2.nii.gz'
         else:
             outputs['v1map_file'] = self._gen_filename('v1map_file')
 
-        if isdefined(self.inputs.rgbmap_file):
-            outputs['rgbmap_file'] = self.inputs.rgbmap_file
-        else:
-            outputs['rgbmap_file'] = self._gen_filename('rgbmap_file')
+        if isdefined(self.inputs.dti_flag):
+            if isdefined(self.inputs.rgbmap_file):
+                outputs['rgbmap_file'] = self.inputs.rgbmap_file
+            else:
+                outputs['rgbmap_file'] = self._gen_filename('rgbmap_file')
 
-        if isdefined(self.inputs.logdti_file):
-            outputs['logdti_file'] = self.inputs.logdti_file
-        else:
-            outputs['logdti_file'] = self._gen_filename('logdti_file')
+            if isdefined(self.inputs.logdti_file):
+                outputs['logdti_file'] = self.inputs.logdti_file
+            else:
+                outputs['logdti_file'] = self._gen_filename('logdti_file')
 
         return outputs
