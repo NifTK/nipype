@@ -1,9 +1,17 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
+
 """
 The stats module provides higher-level interfaces to some of the operations
-that can be performed with the niftysegstats (seg_stats) command-line program.
+that can be performed with the niftyseg stats (seg_stats) command-line program.
+
+Change directory to provide relative paths for doctests
+    >>> import os
+    >>> filepath = os.path.dirname( os.path.realpath( __file__ ) )
+    >>> datadir = os.path.realpath(os.path.join(filepath, '../../testing/data'))
+    >>> os.chdir(datadir)
 """
+from __future__ import print_function
 import numpy as np
 
 from ..base import TraitedSpec, File, traits, CommandLineInputSpec
@@ -40,6 +48,16 @@ class StatsOutput(TraitedSpec):
 class StatsCommand(NiftySegCommand):
     """
     Base Command Interface for seg_stats interfaces.
+
+    The executable seg_stats enables the estimation of image statistics on
+    continuous voxel intensities (average, standard deviation, min/max, robust
+    range, percentiles, sum, probabilistic volume, entropy, etc) either over
+    the full image or on a per slice basis (slice axis can be specified),
+    statistics over voxel coordinates (location of max, min and centre of
+    mass, bounding box, etc) and statistics over categorical images (e.g. per
+    region volume, count, average, Dice scores, etc). These statistics are
+    robust to the presence of NaNs, and can be constrained by a mask and/or
+    thresholded at a certain level.
     """
     _cmd = get_custom_path('seg_stats')
     input_spec = StatsInput
@@ -48,7 +66,7 @@ class StatsCommand(NiftySegCommand):
     def _parse_stdout(self, stdout):
         out = []
         for string_line in stdout.split("\n"):
-            print('parsing line ' + string_line)
+            print('parsing line {0}'.format(string_line))
             if string_line.startswith('#'):
                 continue
             if len(string_line) <= 1:
@@ -120,11 +138,11 @@ class UnaryStats(StatsCommand):
 
     Examples
     --------
-    >>> from nipype.interfaces.niftyseg import UnaryStats
-    >>> node = UnaryStats()
-    >>> node.inputs.in_file = 'im1.nii'  # doctest: +SKIP
+    >>> from nipype.interfaces import niftyseg
+    >>> node = niftyseg.UnaryStats()
+    >>> node.inputs.in_file = 'im1.nii'
     >>> node.inputs.operation = 'v'
-    >>> node.cmdline  # doctest: +SKIP
+    >>> node.cmdline  # doctest: +ALLOW_UNICODE
     'seg_stats im1.nii -v'
 
     """
@@ -183,13 +201,13 @@ class BinaryStats(StatsCommand):
 
     Examples
     --------
-    >>> from nipype.interfaces.niftyseg import BinaryStats
-    >>> node = BinaryStats()
-    >>> node.inputs.in_file = 'im1.nii'  # doctest: +SKIP
+    >>> from nipype.interfaces import niftyseg
+    >>> node = niftyseg.BinaryStats()
+    >>> node.inputs.in_file = 'im1.nii'
     >>> node.inputs.operation = 'sa'
     >>> node.inputs.operand_value = 2.0
-    >>> node.cmdline  # doctest: +SKIP
-    'seg_stats im1.nii -sa 2'
+    >>> node.cmdline  # doctest: +ALLOW_UNICODE
+    'seg_stats im1.nii -sa 2.00000000'
 
     """
     input_spec = BinaryStatsInput

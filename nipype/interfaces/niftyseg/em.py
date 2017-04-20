@@ -10,6 +10,12 @@ that can be performed with the seg_em command-line program.
 Examples
 --------
 See the docstrings of the individual classes for examples.
+
+Change directory to provide relative paths for doctests
+    >>> import os
+    >>> filepath = os.path.dirname( os.path.realpath( __file__ ) )
+    >>> datadir = os.path.realpath(os.path.join(filepath, '../../testing/data'))
+    >>> os.chdir(datadir)
 """
 
 import os
@@ -116,13 +122,13 @@ class EM(NiftySegCommand):
 
     Examples
     --------
-    >>> from nipype.interfaces.niftyseg import EM
-    >>> node = EM()
-    >>> node.inputs.in_file = 'im1.nii'  # doctest: +SKIP
+    >>> from nipype.interfaces import niftyseg
+    >>> node = niftyseg.EM()
+    >>> node.inputs.in_file = 'im1.nii'
     >>> node.inputs.no_prior = 4
-    >>> node.cmdline  # doctest: +SKIP
-    'seg_EM -in im1.nii -nopriors 4 -bc_out im1_bc_em.nii -out im1_em.nii \
--out_outlier im1_outlier_em.nii'
+    >>> node.cmdline  # doctest: +ELLIPSIS +ALLOW_UNICODE
+    'seg_EM -in im1.nii -nopriors 4 -bc_out .../im1_bc_em.nii \
+-out .../im1_em.nii -out_outlier .../im1_outlier_em.nii'
 
     """
     _cmd = get_custom_path('seg_EM')

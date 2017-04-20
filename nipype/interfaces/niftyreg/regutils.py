@@ -1,10 +1,22 @@
+# -*- coding: utf-8 -*-
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
+
 """The regutils module provides classes for interfacing with the `niftyreg
 <http://niftyreg.sourceforge.net>`_ utility command line tools.
-The interfaces were written to work with niftyreg version 1.4
+
+The interfaces were written to work with niftyreg version 1.5.10
+
+Change directory to provide relative paths for doctests
+    >>> import os
+    >>> filepath = os.path.dirname( os.path.realpath( __file__ ) )
+    >>> datadir = os.path.realpath(os.path.join(filepath, '../../testing/data'))
+    >>> os.chdir(datadir)
 """
 
+from __future__ import (print_function, division, unicode_literals,
+                        absolute_import)
+from builtins import len, open, property, super
 import warnings
 import os
 
@@ -90,16 +102,16 @@ class RegResample(NiftyRegCommand):
 
     Examples
     --------
-    >>> from nipype.interfaces.niftyreg import RegResample
-    >>> node = RegResample()
-    >>> node.inputs.ref_file = 'ref.nii.gz'  # doctest: +SKIP
-    >>> node.inputs.flo_file = 'flo.nii.gz'  # doctest: +SKIP
-    >>> node.inputs.trans_file = 'warpfield.nii.gz'  # doctest: +SKIP
+    >>> from nipype.interfaces import niftyreg
+    >>> node = niftyreg.RegResample()
+    >>> node.inputs.ref_file = 'im1.nii'
+    >>> node.inputs.flo_file = 'im2.nii'
+    >>> node.inputs.trans_file = 'warpfield.nii'
     >>> node.inputs.inter_val = 'LIN'
     >>> node.inputs.omp_core_val = 4
-    >>> node.cmdline  # doctest: +SKIP
-    'reg_resample -flo flo.nii.gz -inter 1 -omp 4 -ref ref.nii.gz -trans \
-warpfield.nii.gz -res flo_res.nii.gz'
+    >>> node.cmdline  # doctest: +ELLIPSIS +ALLOW_UNICODE
+    'reg_resample -flo im2.nii -inter 1 -omp 4 -ref im1.nii -trans \
+warpfield.nii -res .../im2_res.nii.gz'
 
     """
     _cmd = get_custom_path('reg_resample')
@@ -163,14 +175,14 @@ class RegJacobian(NiftyRegCommand):
 
     Examples
     --------
-    >>> from nipype.interfaces.niftyreg import RegJacobian
-    >>> node = RegJacobian()
-    >>> node.inputs.ref_file = 'ref.nii.gz'  # doctest: +SKIP
-    >>> node.inputs.trans_file = 'warpfield.nii.gz'  # doctest: +SKIP
+    >>> from nipype.interfaces import niftyreg
+    >>> node = niftyreg.RegJacobian()
+    >>> node.inputs.ref_file = 'im1.nii'
+    >>> node.inputs.trans_file = 'warpfield.nii'
     >>> node.inputs.omp_core_val = 4
-    >>> node.cmdline  # doctest: +SKIP
-    'reg_jacobian -omp 4 -ref ref.nii.gz -trans warpfield.nii.gz -jac \
-warpfield_jac.nii.gz'
+    >>> node.cmdline  # doctest: +ELLIPSIS +ALLOW_UNICODE
+    'reg_jacobian -omp 4 -ref im1.nii -trans warpfield.nii -jac \
+.../warpfield_jac.nii.gz'
 
     """
     _cmd = get_custom_path('reg_jacobian')
@@ -284,13 +296,13 @@ class RegTools(NiftyRegCommand):
 
     Examples
     --------
-    >>> from nipype.interfaces.niftyreg import RegTools
-    >>> node = RegTools()
-    >>> node.inputs.in_file = 'im1.nii.gz'  # doctest: +SKIP
+    >>> from nipype.interfaces import niftyreg
+    >>> node = niftyreg.RegTools()
+    >>> node.inputs.in_file = 'im1.nii'
     >>> node.inputs.mul_val = 4
     >>> node.inputs.omp_core_val = 4
-    >>> node.cmdline  # doctest: +SKIP
-    'reg_tools -in im1.nii.gz -mul 4.0 -omp 4 -out im1_tools.nii.gz'
+    >>> node.cmdline  # doctest: +ELLIPSIS +ALLOW_UNICODE
+    'reg_tools -in im1.nii -mul 4.0 -omp 4 -out .../im1_tools.nii.gz'
 
     """
     _cmd = get_custom_path('reg_tools')
@@ -391,15 +403,14 @@ class RegAverage(NiftyRegCommand):
 
     Examples
     --------
-    >>> from nipype.interfaces.niftyreg import RegAverage
-    >>> node = RegAverage()
+    >>> from nipype.interfaces import niftyreg
+    >>> node = niftyreg.RegAverage()
     >>> one_file = 'im1.nii'
     >>> two_file = 'im2.nii'
     >>> three_file = 'im3.nii'
-    >>> node.inputs.avg_files = [one_file, two_file, three_file]  \
-    # doctest: +SKIP
-    >>> node.cmdline  # doctest: +SKIP
-    'reg_average --cmd_file reg_average_cmd'
+    >>> node.inputs.avg_files = [one_file, two_file, three_file]
+    >>> node.cmdline  # doctest: +ELLIPSIS +ALLOW_UNICODE
+    'reg_average --cmd_file .../reg_average_cmd'
 
     """
     _cmd = get_custom_path('reg_average')
@@ -593,12 +604,12 @@ class RegTransform(NiftyRegCommand):
 
     Examples
     --------
-    >>> from nipype.interfaces.niftyreg import RegResample
-    >>> node = RegTransform()
-    >>> node.inputs.def_input = 'warpfield.nii'  # doctest: +SKIP
+    >>> from nipype.interfaces import niftyreg
+    >>> node = niftyreg.RegTransform()
+    >>> node.inputs.def_input = 'warpfield.nii'
     >>> node.inputs.omp_core_val = 4
-    >>> node.cmdline  # doctest: +SKIP
-    'reg_transform -omp 4 -def warpfield.nii warpfield_trans.nii.gz'
+    >>> node.cmdline  # doctest: +ELLIPSIS +ALLOW_UNICODE
+    'reg_transform -omp 4 -def warpfield.nii .../warpfield_trans.nii.gz'
 
     """
     _cmd = get_custom_path('reg_transform')
@@ -705,14 +716,14 @@ class RegMeasure(NiftyRegCommand):
 
     Examples
     --------
-    >>> from nipype.interfaces.niftyreg import RegMeasure
-    >>> node = RegMeasure()
-    >>> node.inputs.ref_file = 'im1.nii'  # doctest: +SKIP
-    >>> node.inputs.flo_file = 'im2.nii'  # doctest: +SKIP
+    >>> from nipype.interfaces import niftyreg
+    >>> node = niftyreg.RegMeasure()
+    >>> node.inputs.ref_file = 'im1.nii'
+    >>> node.inputs.flo_file = 'im2.nii'
     >>> node.inputs.measure_type = 'lncc'
     >>> node.inputs.omp_core_val = 4
-    >>> node.cmdline  # doctest: +SKIP
-    'reg_measure -flo {flo} -lncc -omp 4 -out {out} -ref {ref}'
+    >>> node.cmdline  # doctest: +ELLIPSIS +ALLOW_UNICODE
+    'reg_measure -flo im2.nii -lncc -omp 4 -out .../im2_lncc.txt -ref im1.nii'
 
     """
     _cmd = get_custom_path('reg_measure')
