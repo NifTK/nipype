@@ -10,6 +10,12 @@ that can be performed with the niftysegmaths (seg_maths) command-line program.
 Examples
 --------
 See the docstrings of the individual classes for examples.
+
+Change directory to provide relative paths for doctests
+    >>> import os
+    >>> filepath = os.path.dirname( os.path.realpath( __file__ ) )
+    >>> datadir = os.path.realpath(os.path.join(filepath, '../../testing/data'))
+    >>> os.chdir(datadir)
 """
 import os
 
@@ -48,6 +54,19 @@ class MathsOutput(TraitedSpec):
 class MathsCommand(NiftySegCommand):
     """
     Base Command Interface for seg_maths interfaces.
+
+    The executable seg_maths enables the sequential execution of arithmetic
+    operations, like multiplication (-mul), division (-div) or addition
+    (-add), binarisation (-bin) or thresholding (-thr) operations and
+    convolution by a Gaussian kernel (-smo). It also alows mathematical
+    morphology based operations like dilation (-dil), erosion (-ero),
+    connected components (-lconcomp) and hole filling (-fill), Euclidean
+    (- euc) and geodesic (-geo) distance transforms, local image similarity
+    metric calculation (-lncc and -lssd). Finally, it allows multiple
+    operations over the dimensionality of the image, from merging 3D images
+    together as a 4D image (-merge) or splitting (-split or -tp) 4D images
+    into several 3D images, to estimating the maximum, minimum and average
+    over all time-points, etc.
     """
     _cmd = get_custom_path('seg_maths')
     input_spec = MathsInput
@@ -125,13 +144,13 @@ class UnaryMaths(MathsCommand):
 
     Examples
     --------
-    >>> from nipype.interfaces.niftyseg import UnaryMaths
-    >>> node = UnaryMaths()
-    >>> node.inputs.in_file = 'im1.nii'  # doctest: +SKIP
+    >>> from nipype.interfaces import niftyseg
+    >>> node = niftyseg.UnaryMaths()
+    >>> node.inputs.in_file = 'im1.nii'
     >>> node.inputs.operation = 'sqrt'
     >>> node.inputs.output_datatype = 'float'
-    >>> node.cmdline  # doctest: +SKIP
-    'seg_maths im1.nii -sqrt -odt float im1_sqrt.nii.gz'
+    >>> node.cmdline  # doctest: +ELLIPSIS +ALLOW_UNICODE
+    'seg_maths im1.nii -sqrt -odt float .../im1_sqrt.nii'
 
     """
     input_spec = UnaryMathsInput
@@ -212,14 +231,14 @@ class BinaryMaths(MathsCommand):
 
     Examples
     --------
-    >>> from nipype.interfaces.niftyseg import BinaryMaths
-    >>> node = BinaryMaths()
-    >>> node.inputs.in_file = 'im1.nii'  # doctest: +SKIP
+    >>> from nipype.interfaces import niftyseg
+    >>> node = niftyseg.BinaryMaths()
+    >>> node.inputs.in_file = 'im1.nii'
     >>> node.inputs.operation = 'sub'
-    >>> node.inputs.operand_file = 'im2.nii' # doctest: +SKIP
+    >>> node.inputs.operand_file = 'im2.nii'
     >>> node.inputs.output_datatype = 'float'
-    >>> node.cmdline  # doctest: +SKIP
-    'seg_maths im1.nii -odt float -sub im2.nii im1_sub.nii.gz'
+    >>> node.cmdline  # doctest: +ELLIPSIS +ALLOW_UNICODE
+    'seg_maths im1.nii -sub im2.nii -odt float .../im1_sub.nii'
 
     """
     input_spec = BinaryMathsInput
@@ -289,12 +308,12 @@ class BinaryMathsInteger(MathsCommand):
     --------
     >>> from nipype.interfaces.niftyseg import BinaryMathsInteger
     >>> node = BinaryMathsInteger()
-    >>> node.inputs.in_file = 'im1.nii'  # doctest: +SKIP
+    >>> node.inputs.in_file = 'im1.nii'
     >>> node.inputs.operation = 'dil'
     >>> node.inputs.operand_value = 2
     >>> node.inputs.output_datatype = 'float'
-    >>> node.cmdline  # doctest: +SKIP
-    'seg_maths im1.nii -dil 2 im1_dil.nii -odt float'
+    >>> node.cmdline  # doctest: +ELLIPSIS +ALLOW_UNICODE
+    'seg_maths im1.nii -dil 2 -odt float .../im1_dil.nii'
 
     """
     input_spec = BinaryMathsInputInteger
@@ -357,15 +376,15 @@ class TupleMaths(MathsCommand):
 
     Examples
     --------
-    >>> from nipype.interfaces.niftyseg import TupleMaths
-    >>> node = TupleMaths()
-    >>> node.inputs.in_file = 'im1.nii'  # doctest: +SKIP
+    >>> from nipype.interfaces import niftyseg
+    >>> node = niftyseg.TupleMaths()
+    >>> node.inputs.in_file = 'im1.nii'
     >>> node.inputs.operation = 'lncc'
-    >>> node.inputs.operand_file1 = 'im2.nii'  # doctest: +SKIP
+    >>> node.inputs.operand_file1 = 'im2.nii'
     >>> node.inputs.operand_value2 = 2.0
     >>> node.inputs.output_datatype = 'float'
-    >>> node.cmdline  # doctest: +SKIP
-    'seg_maths im1.nii -lncc im2.nii 2.00000000 im1_lncc.nii -odt float'
+    >>> node.cmdline  # doctest: +ELLIPSIS +ALLOW_UNICODE
+    'seg_maths im1.nii -lncc im2.nii 2.00000000 -odt float .../im1_lncc.nii'
 
     """
     input_spec = TupleMathsInput
@@ -398,15 +417,16 @@ class Merge(MathsCommand):
 
     Examples
     --------
-    >>> from nipype.interfaces.niftyseg import Merge
-    >>> node = Merge()
-    >>> node.inputs.in_file = 'im1.nii'  # doctest: +SKIP
+    >>> from nipype.interfaces import niftyseg
+    >>> node = niftyseg.Merge()
+    >>> node.inputs.in_file = 'im1.nii'
     >>> files = ['im2.nii', 'im3.nii']
-    >>> node.inputs.merge_files = files  # doctest: +SKIP
+    >>> node.inputs.merge_files = files
     >>> node.inputs.dimension = 2
     >>> node.inputs.output_datatype = 'float'
-    >>> node.cmdline  # doctest: +SKIP
-    'seg_maths im1.nii -merge 2 2 im2.nii im3.nii -odt float im1_merged.nii'
+    >>> node.cmdline  # doctest: +ELLIPSIS +ALLOW_UNICODE
+    'seg_maths im1.nii -merge 2 2 im2.nii im3.nii -odt float \
+.../im1_merged.nii'
 
     """
     input_spec = MergeInput
@@ -414,7 +434,6 @@ class Merge(MathsCommand):
 
     def _format_arg(self, opt, spec, val):
         """Convert input to appropriate format for seg_maths."""
-        print opt
         if opt == 'merge_files':
             return "-merge %d %d %s" % (len(val), self.inputs.dimension,
                                         ' '.join(val))

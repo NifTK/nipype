@@ -8,6 +8,7 @@ pipelines.
 Including linear and non-linear image co-registration
 '''
 
+from builtins import str, range
 import nipype.interfaces.utility as niu
 import nipype.interfaces.niftyreg as niftyreg
 import nipype.pipeline.engine as pe
@@ -49,7 +50,7 @@ def create_linear_gw_step(name="linear_gw_niftyreg",
     -------
 
     >>> from nipype.workflows.smri.niftyreg import create_linear_gw_step
-    >>> lgw = create_linear_gw_step('my_linear_coreg')
+    >>> lgw = create_linear_gw_step('my_linear_coreg')  # doctest: +SKIP
     >>> lgw.inputs.inputspec.in_files = ['file1.nii.gz', 'file2.nii.gz']  \
 # doctest: +SKIP
     >>> lgw.inputs.inputspec.ref_file = ['ref.nii.gz']  # doctest: +SKIP
@@ -209,7 +210,7 @@ def create_nonlinear_gw_step(name="nonlinear_gw_niftyreg",
         workflow.connect(inputnode, 'input_aff_files', nonlin_reg, 'aff_file')
 
     if demean:
-        if 'vel_flag' in nonlinear_options_hash.keys() and \
+        if 'vel_flag' in list(nonlinear_options_hash.keys()) and \
            nonlinear_options_hash['vel_flag'] is True and \
            initial_affines:
             workflow.connect(

@@ -4,8 +4,15 @@
 """
 The fusion module provides higher-level interfaces to some of the operations
 that can be performed with the seg_LabFusion command-line program.
+
+Change directory to provide relative paths for doctests
+    >>> import os
+    >>> filepath = os.path.dirname( os.path.realpath( __file__ ) )
+    >>> datadir = os.path.realpath(os.path.join(filepath, '../../testing/data'))
+    >>> os.chdir(datadir)
 """
 
+from builtins import str
 import os
 import warnings
 
@@ -107,23 +114,40 @@ class LabelFusion(NiftySegCommand):
     """Interface for executable seg_LabelFusion from NiftySeg platform using
     type STEPS as classifier Fusion.
 
+    This executable implements 4 fusion strategies (-STEPS, -STAPLE, -MV or
+    - SBA), all of them using either a global (-GNCC), ROI-based (-ROINCC),
+    local (-LNCC) or no image similarity (-ALL). Combinations of fusion
+    algorithms and similarity metrics give rise to different variants of known
+    algorithms. As an example, using LNCC and MV as options will run a locally
+    weighted voting strategy with LNCC derived weights, while using STAPLE and
+    LNCC is equivalent to running STEPS as per its original formulation.
+    A few other options pertaining the use of an MRF (-MRF beta), the initial
+    sensitivity and specificity estimates and the use of only non-consensus
+    voxels (-unc) for the STAPLE and STEPS algorithm. All processing can be
+    masked (-mask), greatly reducing memory consumption.
+
+    As an example, the command to use STEPS should be:
+    seg_LabFusion -in 4D_Propragated_Labels_to_fuse.nii -out \
+    FusedSegmentation.nii -STEPS 2 15 TargetImage.nii \
+    4D_Propagated_Intensities.nii
+
     For source code, see http://cmictig.cs.ucl.ac.uk/wiki/index.php/NiftySeg
     For Documentation, see:
         http://cmictig.cs.ucl.ac.uk/wiki/index.php/NiftySeg_documentation
 
     Examples
     --------
-    >>> from nipype.interfaces.niftyseg import LabelFusion
-    >>> node = LabelFusion()
-    >>> node.inputs.in_file = 'im1.nii'  # doctest: +SKIP
+    >>> from nipype.interfaces import niftyseg
+    >>> node = niftyseg.LabelFusion()
+    >>> node.inputs.in_file = 'im1.nii'
     >>> node.inputs.kernel_size = 2.0
-    >>> node.inputs.file_to_seg = 'im2.nii'  # doctest: +SKIP
-    >>> node.inputs.template_file = 'im3.nii'  # doctest: +SKIP
+    >>> node.inputs.file_to_seg = 'im2.nii'
+    >>> node.inputs.template_file = 'im3.nii'
     >>> node.inputs.template_num = 2
     >>> node.inputs.classifier_type = 'STEPS'
-    >>> node.cmdline  # doctest: +SKIP
+    >>> node.cmdline  # doctest: +ELLIPSIS +ALLOW_UNICODE
     'seg_LabFusion -in im1.nii -STEPS 2.000000 2 im2.nii im3.nii -out \
-im1_steps.nii'
+.../im1_steps.nii'
 
     """
     _cmd = get_custom_path('seg_LabFusion')
@@ -276,13 +300,13 @@ class CalcTopNCC(NiftySegCommand):
 
     Examples
     --------
-    >>> from nipype.interfaces.niftyseg import CalcTopNCC
-    >>> node = CalcTopNCC()
-    >>> node.inputs.in_file = 'im1.nii'  # doctest: +SKIP
+    >>> from nipype.interfaces import niftyseg
+    >>> node = niftyseg.CalcTopNCC()
+    >>> node.inputs.in_file = 'im1.nii'
     >>> node.inputs.num_templates = 2
-    >>> node.inputs.in_templates = ['im2.nii', 'im3.nii']  # doctest: +SKIP
+    >>> node.inputs.in_templates = ['im2.nii', 'im3.nii']
     >>> node.inputs.top_templates = 1
-    >>> node.cmdline  # doctest: +SKIP
+    >>> node.cmdline  # doctest: +ALLOW_UNICODE
     'seg_CalcTopNCC -target im1.nii -templates 2 im2.nii im3.nii -n 1'
 
     """
