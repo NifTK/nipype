@@ -23,7 +23,7 @@
    plugins
    config_file
    debug
-
+   cli
 
 .. toctree::
    :maxdepth: 1
@@ -39,6 +39,8 @@
    mipav
    nipypecmd
    aws
+   resource_sched_profiler
+   sphinx_ext
 
 
 

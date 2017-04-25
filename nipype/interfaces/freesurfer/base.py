@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 """The freesurfer module provides basic functions for interfacing with
@@ -13,16 +14,18 @@ Examples
 See the docstrings for the individual classes for 'working' examples.
 
 """
-__docformat__ = 'restructuredtext'
+from __future__ import print_function, division, unicode_literals, absolute_import
+from builtins import open, object, str
 
-from builtins import object
 
 import os
 
-from ..base import (CommandLine, Directory,
-                    CommandLineInputSpec, isdefined)
 from ...utils.filemanip import fname_presuffix
+from ..base import (CommandLine, Directory,
+                    CommandLineInputSpec, isdefined,
+                    traits, TraitedSpec, File)
 
+__docformat__ = 'restructuredtext'
 
 class Info(object):
     """ Freesurfer subject directory and version information.
@@ -116,10 +119,6 @@ class FSCommand(CommandLine):
     def set_default_subjects_dir(cls, subjects_dir):
         cls._subjects_dir = subjects_dir
 
-    @property
-    def version(self):
-        return Info.version()
-
     def run(self, **inputs):
         if 'subjects_dir' in inputs:
             self.inputs.subjects_dir = inputs['subjects_dir']
@@ -161,3 +160,108 @@ class FSCommand(CommandLine):
                 return ver.rstrip().split('-')[-1] + '.dev'
             else:
                 return ver.rstrip().split('-v')[-1]
+
+
+class FSSurfaceCommand(FSCommand):
+    """Support for FreeSurfer surface-related functions.
+    For some functions, if the output file is not specified starting with
+    'lh.' or 'rh.', FreeSurfer prepends the prefix from the input file to the
+    output filename. Output out_file must be adjusted to accommodate this.
+    By including the full path in the filename, we can also avoid this behavior.
+    """
+    def _get_filecopy_info(self):
+        self._normalize_filenames()
+        return super(FSSurfaceCommand, self)._get_filecopy_info()
+
+    def _normalize_filenames(self):
+        """Filename normalization routine to perform only when run in Node
+        context
+        """
+        pass
+
+    @staticmethod
+    def _associated_file(in_file, out_name):
+        """Based on MRIsBuildFileName in freesurfer/utils/mrisurf.c
+
+        Use in_file prefix to indicate hemisphere for out_name, rather than
+        inspecting the surface data structure.
+        Also, output to in_file's directory if path information not provided
+        for out_name.
+        """
+        path, base = os.path.split(out_name)
+        if path == '':
+            path, in_file = os.path.split(in_file)
+            hemis = ('lh.', 'rh.')
+            if in_file[:3] in hemis and base[:3] not in hemis:
+                base = in_file[:3] + base
+        return os.path.abspath(os.path.join(path, base))
+
+
+class FSScriptCommand(FSCommand):
+    """ Support for Freesurfer script commands with log inputs.terminal_output
+    """
+    _terminal_output = 'file'
+    _always_run = False
+
+    def __init__(self, **inputs):
+        super(FSScriptCommand, self).__init__(**inputs)
+        self.set_default_terminal_output(self._terminal_output)
+
+    def _list_outputs(self):
+        outputs = self._outputs().get()
+        outputs['log_file'] = os.path.abspath('stdout.nipype')
+        return outputs
+
+
+class FSScriptOutputSpec(TraitedSpec):
+    log_file = File('stdout.nipype', usedefault=True,
+                    exists=True, desc="The output log")
+
+
+class FSTraitedSpecOpenMP(FSTraitedSpec):
+    num_threads = traits.Int(desc='allows for specifying more threads')
+
+
+class FSCommandOpenMP(FSCommand):
+    """Support for FS commands that utilize OpenMP
+
+    Sets the environment variable 'OMP_NUM_THREADS' to the number
+    of threads specified by the input num_threads.
+    """
+
+    input_spec = FSTraitedSpecOpenMP
+
+    _num_threads = None
+
+    def __init__(self, **inputs):
+        super(FSCommandOpenMP, self).__init__(**inputs)
+        self.inputs.on_trait_change(self._num_threads_update, 'num_threads')
+        if not self._num_threads:
+            self._num_threads = os.environ.get('OMP_NUM_THREADS', None)
+            if not self._num_threads:
+                self._num_threads = os.environ.get('NSLOTS', None)
+        if not isdefined(self.inputs.num_threads) and self._num_threads:
+            self.inputs.num_threads = int(self._num_threads)
+        self._num_threads_update()
+
+    def _num_threads_update(self):
+        if self.inputs.num_threads:
+            self.inputs.environ.update(
+                {'OMP_NUM_THREADS': str(self.inputs.num_threads)})
+
+    def run(self, **inputs):
+        if 'num_threads' in inputs:
+            self.inputs.num_threads = inputs['num_threads']
+        self._num_threads_update()
+        return super(FSCommandOpenMP, self).run(**inputs)
+
+
+def no_freesurfer():
+    """Checks if FreeSurfer is NOT installed
+    used with skipif to skip tests that will
+    fail if FreeSurfer is not installed"""
+
+    if Info.version() is None:
+        return True
+    else:
+        return False

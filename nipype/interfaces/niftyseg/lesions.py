@@ -1,25 +1,36 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-"""Nipype interface for seg_FillLesions.
+"""
+Nipype interface for seg_FillLesions.
 
 The fusion module provides higher-level interfaces to some of the operations
 that can be performed with the seg_FillLesions command-line program.
+
+Examples
+--------
+See the docstrings of the individual classes for examples.
+
+Change directory to provide relative paths for doctests
+    >>> import os
+    >>> filepath = os.path.dirname( os.path.realpath( __file__ ) )
+    >>> datadir = os.path.realpath(os.path.join(filepath, '../../testing/data'))
+    >>> os.chdir(datadir)
 """
 
 import os
 import warnings
-from nipype.interfaces.niftyseg.base import NIFTYSEGCommandInputSpec,\
-                                            NIFTYSEGCommand,\
-                                            getNiftySegPath
-from nipype.interfaces.base import (TraitedSpec, File, traits, isdefined)
+
+from ..base import TraitedSpec, File, traits, isdefined, CommandLineInputSpec
+from .base import NiftySegCommand, get_custom_path
+
 
 warn = warnings.warn
 warnings.filterwarnings('always', category=UserWarning)
 
 
-class FillLesionsInputSpec(NIFTYSEGCommandInputSpec):
-    """Input Spec for seg_FillLesions."""
+class FillLesionsInputSpec(CommandLineInputSpec):
+    """Input Spec for FillLesions."""
     # Mandatory input arguments
     in_file = File(argstr='-i %s', exists=True, mandatory=True,
                    desc='Input image to fill lesions', position=1)
@@ -78,16 +89,30 @@ float, double).'
 
 
 class FillLesionsOutputSpec(TraitedSpec):
-    """Output Spec for seg_FillLesions."""
+    """Output Spec for FillLesions."""
     out_file = File(desc="Output segmentation")
 
 
-class FillLesions(NIFTYSEGCommand):
-    """Interface for seg_FillLesions.
+class FillLesions(NiftySegCommand):
+    """Interface for executable seg_FillLesions from NiftySeg platform.
 
-    Fill all the masked lesions with WM intensity average
+    Fill all the masked lesions with WM intensity average.
+
+    For source code, see http://cmictig.cs.ucl.ac.uk/wiki/index.php/NiftySeg
+    For Documentation, see:
+        http://cmictig.cs.ucl.ac.uk/wiki/index.php/NiftySeg_documentation
+
+    Examples
+    --------
+    >>> from nipype.interfaces import niftyseg
+    >>> node = niftyseg.FillLesions()
+    >>> node.inputs.in_file = 'im1.nii'
+    >>> node.inputs.lesion_mask = 'im2.nii'
+    >>> node.cmdline  # doctest: +ELLIPSIS +ALLOW_UNICODE
+    'seg_FillLesions -i im1.nii -l im2.nii -o .../im1_lesions_filled.nii'
+
     """
-    _cmd = getNiftySegPath('seg_FillLesions')
+    _cmd = get_custom_path('seg_FillLesions')
     input_spec = FillLesionsInputSpec
     output_spec = FillLesionsOutputSpec
 
