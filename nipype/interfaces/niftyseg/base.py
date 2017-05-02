@@ -65,7 +65,11 @@ class NiftySegCommand(CommandLine):
         # exec_cmd = ''.join((self.cmd, ' --version'))
         exec_cmd = 'seg_EM --version'
         # Using seg_EM for version (E.G: seg_stats --version doesn't work)
-        return subprocess.check_output(exec_cmd, shell=True).strip('\n')
+        try:
+            _version = subprocess.check_output(exec_cmd, shell=True).strip('\n')
+        except:
+            _version = '1.0.0'  # default version if not found
+        return _version
 
     @property
     def version(self):
